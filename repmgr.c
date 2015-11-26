@@ -929,9 +929,7 @@ do_master_register(void)
 				exit(ERR_BAD_CONFIG);
 			}
 		}
-
 	}
-
 
 	/* Now register the master */
 	record_created = create_node_record(conn,
@@ -1218,8 +1216,6 @@ do_standby_clone(void)
 	values[0] = runtime_options.host;
 	keywords[1] = "port";
 	values[1] = runtime_options.masterport;
-
-	/* XXX provide user too? */
 
 	/* Connect to check configuration */
 	log_info(_("connecting to upstream node\n"));
@@ -2250,8 +2246,6 @@ do_standby_switchover(void)
 	char	    remote_host[MAXLEN];
 	char        remote_data_directory[MAXLEN];
 	int         remote_node_id;
-	// make configurable?
-	int         remote_reconnection_max_attempts = 10;
 	char        remote_node_replication_state[MAXLEN] = "";
 	int			i,
 				r = 0;
@@ -2490,7 +2484,7 @@ do_standby_switchover(void)
 
 	/* loop for timeout waiting for current primary to stop */
 
-	for(i = 0; i < remote_reconnection_max_attempts; i++)
+	for(i = 0; i < options.reconnect_attempts; i++)
 	{
 		/* Check whether primary is available */
 
@@ -2512,7 +2506,7 @@ do_standby_switchover(void)
 		PQfinish(remote_conn);
 
 		// configurable?
-		sleep(1);
+		sleep(options.reconnect_interval);
 		i++;
 	}
 
@@ -2565,7 +2559,7 @@ do_standby_switchover(void)
 
 	connection_success = false;
 
-	for(i = 0; i < remote_reconnection_max_attempts; i++)
+	for(i = 0; i < options.reconnect_attempts; i++)
 	{
 		/* Check whether primary is available */
 
@@ -2584,8 +2578,7 @@ do_standby_switchover(void)
 		}
 		PQfinish(remote_conn);
 
-		// configurable?
-		sleep(1);
+		sleep(options.reconnect_interval);
 		i++;
 	}
 
