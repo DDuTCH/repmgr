@@ -832,6 +832,8 @@ do_master_register(void)
 	bool		schema_exists = false;
 	int			ret;
 
+	int		    primary_node_id = UNKNOWN_NODE_ID;
+
 	bool		record_created;
 
 	conn = establish_db_connection(options.conninfo, true);
@@ -888,10 +890,22 @@ do_master_register(void)
 
 	PQfinish(master_conn);
 
-	/* XXX we should check if a node with a different ID is registered as
-	   master, otherwise it would be possible to insert a duplicate record
-	   with --force, which would result in an unwelcome "multi-master" situation
+	begin_transaction(conn);
+
+	/*
+	 * Check if a node with a different ID is registered as primary. This shouldn't
+	 * happen but could do if an existing master was shut down without being
+	 * unregistered.
 	*/
+
+	primary_node_id = get_master_node_id(conn, options.cluster_name);
+	if (primary_node_id != NODE_NOT_FOUND && primary_node_id != options.node)
+	{
+		log_err(_("another node with id %i is already registered as master\n"), primary_node_id);
+		rollback_transaction(conn);
+		PQfinish(conn);
+		exit(ERR_BAD_CONFIG);
+	}
 
 	/* Delete any existing record for this node if --force set */
 	if (runtime_options.force)
@@ -916,7 +930,6 @@ do_master_register(void)
 			}
 		}
 
-		commit_transaction(conn);
 	}
 
 
@@ -934,9 +947,12 @@ do_master_register(void)
 
 	if (record_created == false)
 	{
+		rollback_transaction(conn);
 		PQfinish(conn);
 		exit(ERR_DB_QUERY);
 	}
+
+	commit_transaction(conn);
 
 	/* Log the event */
 	create_event_record(conn,
