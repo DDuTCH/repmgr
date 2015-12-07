@@ -620,6 +620,7 @@ main(int argc, char **argv)
 			break;
 	}
 
+	log_notice(_("shutting down logger"));
 
 	logger_shutdown();
 
@@ -2174,6 +2175,8 @@ do_standby_follow(void)
 	}
 	PQfinish(master_conn);
 
+	log_notice(_("FOLLOWING NEW LEADER!"));
+	
 	return;
 }
 
