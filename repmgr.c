@@ -624,6 +624,8 @@ main(int argc, char **argv)
 
 	logger_shutdown();
 
+	printf("logger shutdown");
+
 	return 0;
 }
 
