@@ -620,11 +620,11 @@ main(int argc, char **argv)
 			break;
 	}
 
-	log_notice(_("shutting down logger"));
+	log_notice(_("shutting down logger\n"));
 
 	logger_shutdown();
 
-	printf("logger shutdown");
+	printf("logger shutdown\n");
 
 	return 0;
 }
